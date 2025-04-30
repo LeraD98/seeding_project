@@ -85,7 +85,69 @@ describe("GET /api/articles/:article_id", () => {
       });
   });
 });
+describe("GET /api/articles", () => {
+  test("200: returns an object containing an 'articles' array", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toBeInstanceOf(Object);
+        expect(body.articles).toBeInstanceOf(Array);
+      });
+  });
 
+  test("each article has the correct keys", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        body.articles.forEach((article) => {
+          expect(article).toHaveProperty("author");
+          expect(article).toHaveProperty("title");
+          expect(article).toHaveProperty("article_id");
+          expect(article).toHaveProperty("topic");
+          expect(article).toHaveProperty("created_at");
+          expect(article).toHaveProperty("votes");
+          expect(article).toHaveProperty("article_img_url");
+          expect(article).toHaveProperty("comment_count");
+        });
+      });
+  });
+
+  test("comment_count is a string representing a number", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        body.articles.forEach((article) => {
+          expect(typeof article.comment_count).toBe("string");
+          expect(!isNaN(article.comment_count)).toBe(true);
+        });
+      });
+  });
+
+  test("does not include the body property on any article", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        body.articles.forEach((article) => {
+          expect(article).not.toHaveProperty("body");
+        });
+      });
+  });
+
+  test("returns articles sorted by date in descending order", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const dates = body.articles.map((a) => a.created_at);
+        const sortedDates = [...dates].sort((a, b) => new Date(b) - new Date(a));
+        expect(dates).toEqual(sortedDates);
+      });
+  });
+});
 afterAll(() => {
   return db.end();
 });
