@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const { getTopics} = require("./controllers/topics.controller");
 const { getArticleById, getArticles } = require("./controllers/articles.controller");
-const { getCommentsByArticleId } = require("./controllers/comments.controller");
+const { getCommentsByArticleId, postCommentByArticleId} = require("./controllers/comments.controller");
 
 const endpoints = require('./endpoints.json'); 
 app.use(express.json());
@@ -19,6 +19,8 @@ app.get("/api/articles", getArticles);
 
 app.get("/api/articles/:article_id/comments", getCommentsByArticleId);
 
+app.post("/api/articles/:article_id/comments", postCommentByArticleId);
+
 app.use((err, req, res, next) => {
   if (err.status && err.msg) {
     res.status(err.status).send({ msg: err.msg });
@@ -29,3 +31,7 @@ app.use((err, req, res, next) => {
 
 
 module.exports = app;
+
+// app.get()	Read/fetch data
+// app.post()	Create/send new data
+// app.use()	Use middleware (error handlers etc)
