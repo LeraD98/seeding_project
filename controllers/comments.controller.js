@@ -10,18 +10,7 @@ exports.getCommentsByArticleId = (req, res, next) => {
      return;
   }
 
-//   const article = selectArticleById(article_id).catch(() => {
-//         res.status(404).send({ msg: 'Article Not Found' });
-//         next();
-//   });
 
-
-//   selectCommentsByArticleId(article_id)
-//     .then((comments) => {
-//       res.status(200).send({ comments });
-//     })
-//     .catch(next);
-// };
 
 selectArticleById(article_id)
   .then((article) => {

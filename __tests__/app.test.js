@@ -284,7 +284,61 @@ describe("POST /api/articles/:article_id/comments", () => {
       });
   });
 });
+describe("POST /api/articles/:article_id/comments", () => {
+  test("201: posts a comment and returns it", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "change!",
+    };
 
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(newComment)
+      .expect(201)
+      .then(({ body }) => {
+        expect(body.comment).toEqual(
+          expect.objectContaining({
+            comment_id: expect.any(Number),
+            body: "change!",
+            article_id: 1,
+            author: "butter_bridge",
+            votes: 0,
+            created_at: expect.any(String),
+          })
+        );
+      });
+  });
+
+  test("400: missing body or username", () => {
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send({ username: "butter_bridge" })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+
+  test("404: article not found", () => {
+    return request(app)
+      .post("/api/articles/9999/comments")
+      .send({ username: "butter_bridge", body: "Hello" })
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article Not Found");
+      });
+  });
+
+  test("400: invalid article_id", () => {
+    return request(app)
+      .post("/api/articles/notanid/comments")
+      .send({ username: "butter_bridge", body: "Hello" })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+});
 
 afterAll(() => {
   return db.end();

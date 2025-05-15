@@ -569,7 +569,7 @@ describe.only('data insertion', () => {
   
   test('articles data has been inserted correctly', () => {
     return db.query(`SELECT * FROM articles;`).then(({ rows: articles }) => {
-      expect(articles).toHaveLength(13);
+      expect(articles).toHaveLength(14);
       articles.forEach((article) => {
         expect(article).toHaveProperty('article_id');
         expect(article).toHaveProperty('title');
@@ -597,6 +597,7 @@ describe.only('data insertion', () => {
       });
     });
   });
+  
 });
 
 
