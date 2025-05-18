@@ -39,3 +39,20 @@ return db
   return Promise.reject(err);
 })
 }
+//task 7 
+exports.insertCommentByArticleId = (article_id, username, body) => {
+  const query = `
+    INSERT INTO comments (author, body, article_id)
+    VALUES ($1, $2, $3)
+    RETURNING comment_id, author, body, article_id, votes, created_at;
+  `;
+  return db
+    .query(query, [username, body, article_id])
+    .then(({ rows }) => rows[0])
+    .catch((err) => {
+      if (err.code === "23503") {
+        return Promise.reject({ status: 404, msg: "Article or Username Not Found" });
+      }
+      return Promise.reject(err);
+    });
+};
