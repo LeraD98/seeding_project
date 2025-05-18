@@ -590,6 +590,7 @@ describe.only('data insertion', () => {
         expect(comment).toHaveProperty('comment_id');
         expect(comment).toHaveProperty('body');
         expect(comment).toHaveProperty('article_id');
+        expect(typeof comment.article_id).toBe('number')
         expect(comment).toHaveProperty('author');
         expect(comment).toHaveProperty('votes');
         expect(comment).toHaveProperty('created_at');

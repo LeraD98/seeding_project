@@ -3,7 +3,11 @@ const endpointsJson = require("../endpoints.json");
 const request = require("supertest");
 const db = require("../db/connection");
 const app = require("../app");
+const seed = require('../db/seeds/seed');
+const data = require('../db/data/test-data/index');
 /* Set up your beforeEach & afterAll functions here */
+
+beforeAll(() => seed(data));
 
 describe("GET /api", () => {
   test("200: Responds with an object detailing the documentation for each endpoint", () => {
@@ -17,24 +21,21 @@ describe("GET /api", () => {
 });
 
 describe('GET /api/topics', () => {
-  let response;
-
-  beforeAll(async () => {
-    const { body } = await request(app).get('/api/topics');
-    response = body;
-  });
-
   test('responds with status 200', async () => {
     const res = await request(app).get('/api/topics');
     expect(res.status).toBe(200);
   });
 
-  test('responds with an array of topics', () => {
+  test('responds with an array of topics', async () => {
+    const { body } = await request(app).get('/api/topics');
+    const response = body;
     expect(response.topics).toBeInstanceOf(Array);
     expect(response.topics.length).toBeGreaterThan(0); 
   });
 
-  test('each topic has a slug and description', () => {
+  test('each topic has a slug and description', async () => {
+    const { body } = await request(app).get('/api/topics');
+    const response = body;
     response.topics.forEach((topic) => {
       expect(topic).toEqual(
         expect.objectContaining({
@@ -93,6 +94,7 @@ describe("GET /api/articles", () => {
       .then(({ body }) => {
         expect(body).toBeInstanceOf(Object);
         expect(body.articles).toBeInstanceOf(Array);
+        // Test length here
       });
   });
 
@@ -156,7 +158,11 @@ describe("GET /api/articles/:article_id/comments", () => {
       .expect(200)
       .then(({ body }) => {
         expect(Array.isArray(body.comments)).toBe(true);
-        let lastCreatedDate;
+        
+        if (body.comments.length > 0) {
+          let lastCreatedDate = new Date(body.comments[0].created_at).getTime();
+
+
         body.comments.forEach((comment) => {
           expect(comment).toEqual(
             expect.objectContaining({
@@ -168,20 +174,28 @@ describe("GET /api/articles/:article_id/comments", () => {
               article_id: 1,
             })
           );
-          expect(comment.created_at).toBeLessThan(lastCreatedDate)
-          lastCreatedDate = comment.created_at;
+          const currentDate = new Date(comment.created_at).getTime();
+          expect(currentDate).toBeLessThanOrEqual(lastCreatedDate);
+          lastCreatedDate = currentDate;
         });
+        }
       });
   });
 
-  test("200: responds with an empty array if no comments", () => {
-    return request(app)
-      .get("/api/articles/1/comments") 
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.comments).toEqual([]);
-      });
-  });
+ test("200: responds with an empty array if no comments", () => {
+  return db
+    .query(`SELECT article_id FROM articles WHERE title = 'Test article no comments';`)
+    .then(({ rows }) => {
+      const articleId = rows[0].article_id;
+
+      return request(app)
+        .get(`/api/articles/${articleId}/comments`)
+        .expect(200);
+    })
+    .then(({ body }) => {
+      expect(body.comments).toEqual([]);
+    });
+});
 
   test("400: responds with 'Bad Request' if invalid article_id", () => {
     return request(app)
@@ -201,6 +215,77 @@ describe("GET /api/articles/:article_id/comments", () => {
       });
   });
 });
+
+describe("POST /api/articles/:article_id/comments", () => {
+  test("201: posts a comment and returns it", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "article review",
+    };
+
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(newComment)
+      .expect(201)
+      .then(({ body }) => {
+        const comment = body.comment;
+        expect(comment).toMatchObject({
+          author: "butter_bridge",
+          body: "article review",
+          article_id: 1,
+          votes: 0,
+        });
+        expect(comment).toHaveProperty("comment_id");
+        expect(comment).toHaveProperty("created_at");
+      });
+  });
+
+  test("400: missing body or username", () => {
+    const badComment = {
+      username: "jessjelly",
+    };
+
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(badComment)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+
+  test("400: invalid article_id", () => {
+    const newComment = {
+      username: "jessjelly",
+      body: "Nice!",
+    };
+
+    return request(app)
+      .post("/api/articles/not-a-number/comments")
+      .send(newComment)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+
+  test("404: article does not exist", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "article review",
+    };
+
+    return request(app)
+      .post("/api/articles/9999/comments")
+      .send(newComment)
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article Not Found");
+      });
+  });
+});
+
+
 afterAll(() => {
   return db.end();
 });
