@@ -32,6 +32,3 @@ app.use((err, req, res, next) => {
 
 module.exports = app;
 
-// app.get()	Read/fetch data
-// app.post()	Create/send new data
-// app.use()	Use middleware (error handlers etc)

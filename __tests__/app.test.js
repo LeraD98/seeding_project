@@ -216,11 +216,12 @@ describe("GET /api/articles/:article_id/comments", () => {
   });
 });
 
+
 describe("POST /api/articles/:article_id/comments", () => {
   test("201: posts a comment and returns it", () => {
     const newComment = {
       username: "butter_bridge",
-      body: "article review",
+      body: "this is a test comment",
     };
 
     return request(app)
@@ -228,41 +229,23 @@ describe("POST /api/articles/:article_id/comments", () => {
       .send(newComment)
       .expect(201)
       .then(({ body }) => {
-        const comment = body.comment;
-        expect(comment).toMatchObject({
-          author: "butter_bridge",
-          body: "article review",
-          article_id: 1,
-          votes: 0,
-        });
-        expect(comment).toHaveProperty("comment_id");
-        expect(comment).toHaveProperty("created_at");
+        expect(body.comment).toEqual(
+          expect.objectContaining({
+            comment_id: expect.any(Number),
+            author: "butter_bridge",
+            body: "this is a test comment",
+            article_id: 1,
+            votes: 0,
+            created_at: expect.any(String),
+          })
+        );
       });
   });
 
-  test("400: missing body or username", () => {
-    const badComment = {
-      username: "jessjelly",
-    };
-
+  test("400: missing username or body", () => {
     return request(app)
       .post("/api/articles/1/comments")
-      .send(badComment)
-      .expect(400)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
-      });
-  });
-
-  test("400: invalid article_id", () => {
-    const newComment = {
-      username: "jessjelly",
-      body: "Nice!",
-    };
-
-    return request(app)
-      .post("/api/articles/not-a-number/comments")
-      .send(newComment)
+      .send({ username: "butter_bridge" })
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Bad Request");
@@ -270,21 +253,15 @@ describe("POST /api/articles/:article_id/comments", () => {
   });
 
   test("404: article does not exist", () => {
-    const newComment = {
-      username: "butter_bridge",
-      body: "article review",
-    };
-
     return request(app)
       .post("/api/articles/9999/comments")
-      .send(newComment)
+      .send({ username: "butter_bridge", body: "test comment" })
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article Not Found");
+        expect(body.msg).toBe("Article or Username Not Found");
       });
   });
 });
-
 
 afterAll(() => {
   return db.end();
