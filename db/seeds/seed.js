@@ -1,5 +1,6 @@
 const db = require("../connection")
-
+const format = require('pg-format');
+const { createArticlesLookupObj } = require("./utils");
 const seed = ({ topicData, userData, articleData, commentData }) => {
   return db.query(`DROP TABLE IF EXISTS comments, articles, users, topics CASCADE;`)
     .then(() => {
@@ -80,15 +81,9 @@ const seed = ({ topicData, userData, articleData, commentData }) => {
       });
       return Promise.all(userInsertPromises);
     })
-    .then(() => {
-      {
+    .then(() => { 
         const articleInsertPromises = articleData.map(article => {
-          return db.query(
-            `INSERT INTO articles
-             (title, topic, author, body, created_at, votes, article_img_url)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING *;`,
-            [
+          return[
               article.title,
               article.topic,
               article.author,
@@ -98,12 +93,19 @@ const seed = ({ topicData, userData, articleData, commentData }) => {
               article.votes || 0,
               article.article_img_url || null
             ]
-          );
         });
-        return Promise.all(articleInsertPromises);
-      };
+
+        return  db.query(
+          format(`INSERT INTO articles
+           (title, topic, author, body, created_at, votes, article_img_url)
+           VALUES %L
+           RETURNING *;`,
+          articleInsertPromises
+        ));
     })
-    .then(() => {
+    .then((result) => { 
+      const articlesLookup = createArticlesLookupObj(result.rows)
+
       {
         const commentInsertPromises = commentData.map(comment => {
           return db.query(
@@ -112,17 +114,18 @@ const seed = ({ topicData, userData, articleData, commentData }) => {
              VALUES ($1, $2, $3, $4, $5)
              RETURNING *;`,
             [
-              comment.article_id,
+              articlesLookup[comment.article_title],
               comment.body,
               comment.votes || 0,
               comment.author,
               new Date(comment.created_at).toISOString()
             ]
           );
+          
         });
         return Promise.all(commentInsertPromises);
       };
-    })
-};
+    }) 
+}; 
 
 module.exports = seed;
