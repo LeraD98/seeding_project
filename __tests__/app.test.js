@@ -7,7 +7,7 @@ const seed = require("../db/seeds/seed");
 const data = require("../db/data/test-data/index");
 /* Set up your beforeEach & afterAll functions here */
 
-beforeAll(() => seed(data));
+beforeEach(() => seed(data));
 
 describe("GET /api", () => {
   test("200: Responds with an object detailing the documentation for each endpoint", () => {
@@ -287,7 +287,7 @@ describe("PATCH /api/articles/:article_id", () => {
       .then(({ body }) => {
         expect(body.article).toMatchObject({
           article_id: 1,
-          votes: 51, 
+          votes: 50, 
         });
       });
   });

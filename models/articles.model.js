@@ -37,10 +37,7 @@ exports.selectAllArticles = () => {
       GROUP BY articles.article_id
       ORDER BY articles.created_at DESC; 
     `)
-    // ::INT casts the count result to an integer.
-    // counts the number of comments for each article using the COUNT()
-    // LEFT JOIN ensures that all articles are returned, even if they have no comments.
-    // GROUP BY articles.article_id groups the results by article, 
+
     .then(({ rows }) => {
       return rows;
     });

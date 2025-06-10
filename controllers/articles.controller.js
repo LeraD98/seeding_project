@@ -11,7 +11,7 @@ exports.getArticleById = (req, res, next) => {
 
 exports.getArticles = (req, res, next) => {
   const { sort_by, order, topic } = req.query;
-//10 11
+
   selectAllArticles(sort_by, order, topic)
     .then((articles) => {
       articles.forEach((article) => {
@@ -23,7 +23,7 @@ exports.getArticles = (req, res, next) => {
 };
 
 
-// 8
+
 exports.patchArticleById = (req, res, next) => {
   const { article_id } = req.params;
   const { inc_votes } = req.body;
